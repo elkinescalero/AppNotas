@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Notas Pro - Bachillerato</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+        
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            -webkit-tap-highlight-color: transparent;
+            background-color: #f8fafc;
+        }
+
+        .glass-header {
+            background: rgba(29, 78, 216, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .materia-card {
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .materia-card:active {
+            transform: scale(0.98);
+        }
+
+        .input-nota:focus {
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+        }
+
+        /* Estilo para ocultar flechas de número */
+        input::-webkit-outer-spin-button, 
+        input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+        .custom-shadow {
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="pb-32">
+
+    <header class="glass-header text-white p-6 sticky top-0 z-30 shadow-2xl rounded-b-[2.5rem]">
+        <div class="max-w-md mx-auto">
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <h1 class="text-2xl font-extrabold tracking-tight">AppNotas</h1>
+                    <div id="storage-status" class="flex items-center gap-1.5 mt-1">
+                        <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                        <span class="text-[10px] font-bold uppercase tracking-tighter opacity-80">Sincronizado Local</span>
+                    </div>
+                </div>
+                <div class="bg-white/20 p-3 rounded-2xl border border-white/30 text-center min-w-[80px]">
+                    <p class="text-[9px] font-black uppercase opacity-70">General</p>
+                    <p id="promedio-final" class="text-2xl font-black">0.0</p>
+                </div>
+            </div>
+
+            <div class="flex gap-2">
+                <div class="flex-1 bg-white/10 rounded-xl p-2 border border-white/10 flex flex-col items-center">
+                    <span class="text-[8px] font-bold uppercase opacity-60">L1</span>
+                    <span id="avg-l1" class="text-sm font-bold">-</span>
+                </div>
+                <div class="flex-1 bg-white/10 rounded-xl p-2 border border-white/10 flex flex-col items-center">
+                    <span class="text-[8px] font-bold uppercase opacity-60">L2</span>
+                    <span id="avg-l2" class="text-sm font-bold">-</span>
+                </div>
+                <div class="flex-1 bg-white/10 rounded-xl p-2 border border-white/10 flex flex-col items-center">
+                    <span class="text-[8px] font-bold uppercase opacity-60">L3</span>
+                    <span id="avg-l3" class="text-sm font-bold">-</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-md mx-auto p-4 space-y-6">
+        
+        <div class="flex bg-slate-200/50 backdrop-blur-md rounded-2xl p-1.5 sticky top-44 z-20 border border-white shadow-inner">
+            <button onclick="changeLapso(1)" id="btn-l1" class="flex-1 py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 bg-white text-blue-600 shadow-sm">
+                <i data-lucide="calendar" class="w-4 h-4"></i> 1er L.
+            </button>
+            <button onclick="changeLapso(2)" id="btn-l2" class="flex-1 py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 text-slate-500">
+                <i data-lucide="calendar" class="w-4 h-4"></i> 2do L.
+            </button>
+            <button onclick="changeLapso(3)" id="btn-l3" class="flex-1 py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 text-slate-500">
+                <i data-lucide="calendar" class="w-4 h-4"></i> 3er L.
+            </button>
+        </div>
+
+        <div id="materias-container" class="space-y-4">
+            </div>
+
+        <div id="empty-state" class="hidden flex flex-col items-center justify-center py-20 text-center">
+            <div class="bg-slate-100 p-6 rounded-full mb-4">
+                <i data-lucide="book-open" class="w-12 h-12 text-slate-300"></i>
+            </div>
+            <h3 class="text-slate-800 font-bold text-lg">No hay materias</h3>
+            <p class="text-slate-400 text-sm px-10">Pulsa el botón azul para agregar tu primera materia de este año.</p>
+        </div>
+    </main>
+
+    <div class="fixed bottom-8 left-0 right-0 px-6 z-40">
+        <button onclick="showAddMateriaModal()" class="max-w-md mx-auto w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-extrabold shadow-[0_15px_30px_-5px_rgba(37,99,235,0.4)] flex items-center justify-center gap-3 transition-transform active:scale-95">
+            <i data-lucide="plus-circle" class="w-6 h-6"></i>
+            NUEVA MATERIA
+        </button>
+    </div>
+
+    <div id="modal" class="hidden fixed inset-0 bg-slate-900/90 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4">
+        <div class="bg-white rounded-[2rem] w-full max-w-sm p-8 shadow-2xl animate-pop mb-10 sm:mb-0">
+            <div class="flex justify-center mb-4">
+                <div class="bg-blue-50 p-3 rounded-2xl">
+                    <i data-lucide="edit-3" class="w-8 h-8 text-blue-600"></i>
+                </div>
+            </div>
+            <h3 class="text-2xl font-black text-slate-800 mb-2 text-center">Nombre de Materia</h3>
+            <p class="text-center text-slate-400 text-sm mb-6">Ejemplo: Matemática, Física, Inglés...</p>
+            
+            <input type="text" id="new-materia-name" placeholder="Escribe aquí..." 
+                class="w-full bg-slate-100 border-2 border-transparent focus:border-blue-500 rounded-2xl p-4 mb-6 outline-none font-bold text-center text-lg transition-all">
+            
+            <div class="flex gap-3">
+                <button onclick="hideModal()" class="flex-1 py-4 font-bold text-slate-400 hover:text-slate-600">Cancelar</button>
+                <button onclick="addMateria()" class="flex-1 bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-200">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'notas_bachillerato_premium_v1';
+        let state = { currentLapso: 1, materias: [] };
+
+        function loadData() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) state.materias = JSON.parse(saved);
+            render();
+        }
+
+        function persist() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state.materias));
+            render();
+        }
+
+        function changeLapso(lapso) {
+            state.currentLapso = lapso;
+            [1, 2, 3].forEach(l => {
+                const btn = document.getElementById(`btn-l${l}`);
+                if(l === lapso) {
+                    btn.className = "flex-1 py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 bg-white text-blue-600 shadow-sm";
+                } else {
+                    btn.className = "flex-1 py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 text-slate-500";
+                }
+            });
+            render();
+        }
+
+        function showAddMateriaModal() { 
+            document.getElementById('modal').classList.remove('hidden'); 
+            document.getElementById('new-materia-name').focus();
+        }
+        function hideModal() { document.getElementById('modal').classList.add('hidden'); }
+
+        function addMateria() {
+            const name = document.getElementById('new-materia-name').value.trim();
+            if (name) {
+                state.materias.push({ id: Date.now(), nombre: name, notas: { 1: [], 2: [], 3: [] } });
+                persist();
+                hideModal();
+                document.getElementById('new-materia-name').value = '';
+            }
+        }
+
+        function updateNota(mId, idx, val) {
+            const m = state.materias.find(m => m.id === mId);
+            let n = parseFloat(val.replace(',', '.'));
+            if (val === '') n = null;
+            m.notas[state.currentLapso][idx] = isNaN(n) ? null : (n > 20 ? 20 : n);
+            persist();
+        }
+
+        function addNota(mId) {
+            state.materias.find(m => m.id === mId).notas[state.currentLapso].push(null);
+            persist();
+        }
+
+        function deleteMateria(mId) {
+            if(confirm('¿Estás seguro de eliminar esta materia? No podrás recuperarla.')) {
+                state.materias = state.materias.filter(m => m.id !== mId);
+                persist();
+            }
+        }
+
+        function removeNota(mId, idx) {
+            state.materias.find(m => m.id === mId).notas[state.currentLapso].splice(idx, 1);
+            persist();
+        }
+
+        function getAvg(arr) {
+            const v = arr.filter(n => n !== null);
+            return v.length ? v.reduce((a, b) => a + b, 0) / v.length : 0;
+        }
+
+        function render() {
+            const container = document.getElementById('materias-container');
+            const empty = document.getElementById('empty-state');
+            
+            if (state.materias.length === 0) {
+                container.innerHTML = '';
+                empty.classList.remove('hidden');
+            } else {
+                empty.classList.add('hidden');
+                container.innerHTML = state.materias.map(m => {
+                    const avg = getAvg(m.notas[state.currentLapso]);
+                    const statusColor = avg >= 10 ? 'text-blue-600 bg-blue-50' : (avg > 0 ? 'text-red-500 bg-red-50' : 'text-slate-400 bg-slate-50');
+                    
+                    return `
+                        <div class="materia-card bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100 relative overflow-hidden">
+                            <div class="flex justify-between items-start mb-5">
+                                <div class="flex items-center gap-3">
+                                    <div class="p-3 bg-slate-50 rounded-2xl">
+                                        <i data-lucide="book" class="w-5 h-5 text-slate-400"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-lg font-extrabold text-slate-800 leading-none">${m.nombre}</h3>
+                                        <button onclick="deleteMateria(${m.id})" class="text-[10px] font-bold text-red-400 uppercase tracking-tighter mt-1 flex items-center gap-1">
+                                            <i data-lucide="trash-2" class="w-3 h-3"></i> Borrar
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="${statusColor} px-4 py-2 rounded-2xl text-center min-w-[70px] border border-current/10 transition-colors">
+                                    <p class="text-xs font-black uppercase text-[8px] opacity-60">Lapso</p>
+                                    <p class="text-xl font-black">${avg.toFixed(1)}</p>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-4 gap-3">
+                                ${m.notas[state.currentLapso].map((n, i) => `
+                                    <div class="relative group">
+                                        <input type="number" 
+                                            placeholder="0"
+                                            value="${n !== null ? n : ''}" 
+                                            onchange="updateNota(${m.id}, ${i}, this.value)"
+                                            class="input-nota w-full ${n < 10 && n !== null ? 'bg-red-50 text-red-600' : 'bg-slate-50 text-slate-700'} rounded-xl p-3 text-center font-bold outline-none border-2 border-transparent focus:border-blue-400 transition-all">
+                                        <button onclick="removeNota(${m.id}, ${i})" class="absolute -top-2 -right-2 bg-white shadow-md border border-slate-100 rounded-full w-5 h-5 flex items-center justify-center text-[10px] text-red-400">
+                                            <i data-lucide="x" class="w-3 h-3"></i>
+                                        </button>
+                                    </div>
+                                `).join('')}
+                                <button onclick="addNota(${m.id})" class="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl h-[52px] flex items-center justify-center text-slate-300 hover:text-blue-400 hover:border-blue-200 transition-all active:scale-90">
+                                    <i data-lucide="plus" class="w-6 h-6"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // Cálculos Finales
+            let sums = {1:0, 2:0, 3:0}, cts = {1:0, 2:0, 3:0};
+            state.materias.forEach(m => {
+                [1,2,3].forEach(l => {
+                    const a = getAvg(m.notas[l]);
+                    if (a > 0 || m.notas[l].length > 0) { sums[l] += a; cts[l]++; }
+                });
+            });
+
+            const l1 = cts[1] ? sums[1]/cts[1] : 0;
+            const l2 = cts[2] ? sums[2]/cts[2] : 0;
+            const l3 = cts[3] ? sums[3]/cts[3] : 0;
+            
+            document.getElementById('avg-l1').innerText = l1 > 0 ? l1.toFixed(1) : '-';
+            document.getElementById('avg-l2').innerText = l2 > 0 ? l2.toFixed(1) : '-';
+            document.getElementById('avg-l3').innerText = l3 > 0 ? l3.toFixed(1) : '-';
+            
+            const acts = [l1, l2, l3].filter(v => v > 0);
+            const total = acts.length ? (acts.reduce((a,b)=>a+b, 0)/acts.length).toFixed(1) : '0.0';
+            document.getElementById('promedio-final').innerText = total;
+
+            // Reiniciar iconos de Lucide
+            lucide.createIcons();
+        }
+
+        window.onload = loadData;
+    </script>
+</body>
+</html>
